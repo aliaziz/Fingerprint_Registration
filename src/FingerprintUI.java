@@ -14,9 +14,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Blob;
-import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,6 +24,7 @@ import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -36,8 +36,59 @@ import org.json.JSONException;
 import org.apache.commons.codec.binary.*;
 
 public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
+    
+    private JLabel jLabel4;
 
-    private static File f;
+    private JLabel jLabel5;
+
+    private JLabel jLabel6;
+
+    private JPanel jPanel1;
+
+    private JPanel jPanel2;
+
+    private JPanel jPanel3;
+
+    private JPanel jPanel4;
+
+    private JSeparator jSeparator1;
+
+    private JTextField lastname;
+
+    private JTextField serverIPEditText;
+
+    private JLabel status;
+
+    private JButton updateServerIP;
+
+    private JLabel welcomeMessage;
+    
+    private JTextField employeeCode;
+
+    private JButton enableReader;
+
+    private JLabel fingerprintimage;
+
+    private JButton fingerprintscane;
+    
+    private JTextField firstname;
+
+    private JLabel ipLabel;
+
+    private JComboBox ipsList;
+
+    private JButton jButton1;
+
+    private JButton jButton2;
+
+    private JLabel jLabel1;
+
+    private JLabel jLabel2;
+
+    private JLabel jLabel3;
+    
+    private JComboBox companyList;
+
     java.awt.Image img;
     String firstNameString;
     String lastnameString;
@@ -58,7 +109,6 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
     byte[] fingerPrintValueByteEmpty = new byte[100];
     private String fileName = "ConfigFingerPrint.txt";
 
-    private BufferedReader bufferedReader;
     private ArrayList<String> returnedIps = new ArrayList();
     private ArrayList<String> ipNames = new ArrayList();
     private ArrayList<String> ipAddresses = new ArrayList();
@@ -93,8 +143,6 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         System.out.println(usernameStored + "====" + lastnameStored);
         empCodeStored = prefs.get("empCode", "");
         adminPasswordStored = prefs.get("adminPassword", "");
-
-        String baseurl = prefs.get(Configs.BASE_URL, "");
 
         try {
             ipsFromFile = readFromFile();
@@ -144,14 +192,17 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
             enableReader.setEnabled(true);
         }
 
-        ipsList.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                FingerprintUI.prefs.get(Configs.BASE_URL, "");
-                int ipIndex = ipsList.getSelectedIndex();
-                System.out.println("ip address " + ipIndex + " " + (String) ipAddresses.get(ipIndex));
-                FingerprintUI.prefs.put(Configs.BASE_URL, "http://" + ((String) ipAddresses.get(ipIndex)).replaceAll(" ", "") + ":3000");
-                FingerprintUI.this.getAllBranches();
-            }
+        ipsList.addActionListener((ActionEvent e) -> {
+            FingerprintUI.prefs.get(Configs.BASE_URL, "");
+            int ipIndex = ipsList.getSelectedIndex();
+            System.out.println("ip address " + ipIndex + " " + (String) ipAddresses.get(ipIndex));
+            FingerprintUI.prefs.put(Configs.BASE_URL, "http://" + ((String) ipAddresses.get(ipIndex)).replaceAll(" ", "") + ":3000");
+            FingerprintUI.this.getAllBranches();
+        });
+        
+        companyList.addActionListener((ActionEvent e) -> {
+            int companySelected = companyList.getSelectedIndex();
+            System.out.println("clicked.at "+companySelected);
         });
     }
 
@@ -160,6 +211,31 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
             System.out.println("file ips " + (String) ipNames.get(x));
             ipsList.addItem(ipNames.get(x));
         }
+    }
+    
+    private void addCompaniesList(ArrayList<String> companies) {
+        for (int x = 0; x<companies.size(); x++) {
+            companyList.addItem(companies.get(x));
+        }
+    }
+    
+    private void showCompaniesList() {
+        ArrayList<String> companiesList = new ArrayList<String>();
+        companiesList.add("company a");
+        companiesList.add("company b");
+        addCompaniesList(companiesList);
+        Object[] options = new Object[]{};
+        JOptionPane jop = new JOptionPane("Select company", 
+                JOptionPane.QUESTION_MESSAGE,
+                JOptionPane.DEFAULT_OPTION,
+                null, options, null);
+        jop.add(companyList);
+
+        //create a JDialog and add JOptionPane to it 
+        JDialog diag = new JDialog();
+        diag.getContentPane().add(jop);
+        diag.pack();
+        diag.setVisible(true);
     }
 
     private void WriteToFile(String ipName, String ipAddress) {
@@ -410,10 +486,6 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         }, 0L, 100L);
     }
 
-    private JTextField employeeCode;
-
-    private JButton enableReader;
-
     private void beginFingerRegistration() {
         fpLibrary.INSTANCE.EnrolFpChar();
     }
@@ -428,6 +500,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
     
     private void showNSSFNumberDialog() {
         employeeNSSFNumber = JOptionPane.showInputDialog(this, "Enter NSSF number", "NSSF number");
+        showCompaniesList();
     }
     
     private void requestForAdminPassword() {
@@ -484,11 +557,6 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
     private void showRegSucDialog() {
         JOptionPane.showMessageDialog(this, "Successfully registered");
     }
-
-    private JLabel fingerprintimage;
-
-    private JButton fingerprintscane;
-    private JTextField firstname;
 
     public static void main(String[] args) {
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -552,6 +620,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         welcomeMessage = new JLabel();
         jLabel6 = new JLabel();
         ipsList = new JComboBox();
+        companyList = new JComboBox();
         jSeparator1 = new JSeparator();
         jLabel5 = new JLabel();
 
@@ -662,12 +731,6 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         jLabel6.setFont(new Font("Tahoma", 0, 14));
         jLabel6.setText("Connection");
 
-        ipsList.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                FingerprintUI.this.ipsListActionPerformed(evt);
-            }
-
-        });
         jLabel5.setFont(new Font("Futura2-Normal", 1, 14));
         jLabel5.setHorizontalAlignment(0);
         jLabel5.setText("Select Connection");
@@ -722,20 +785,6 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
             }
         }
     }
-
-    private JLabel ipLabel;
-
-    private JComboBox ipsList;
-
-    private JButton jButton1;
-
-    private JButton jButton2;
-
-    private JLabel jLabel1;
-
-    private JLabel jLabel2;
-
-    private JLabel jLabel3;
 
     private void firstnameActionPerformed(ActionEvent evt) {
     }
@@ -805,47 +854,35 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         }
     }
 
-    private JLabel jLabel4;
-
-    private JLabel jLabel5;
-
-    private JLabel jLabel6;
-
-    private JPanel jPanel1;
-
-    private JPanel jPanel2;
-
-    private JPanel jPanel3;
-
-    private JPanel jPanel4;
-
-    private JSeparator jSeparator1;
-
-    private JTextField lastname;
-
-    private JTextField serverIPEditText;
-
-    private JLabel status;
-
-    private JButton updateServerIP;
-
-    private JLabel welcomeMessage;
-
-    private void ipsListActionPerformed(ActionEvent evt) {
-    }
-
+    /**
+     *
+     * @param comnum
+     * @param nbaud
+     * @param style
+     * @return
+     */
+    @Override
     public int OpenDevice(int comnum, int nbaud, int style) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public int LinkDevice() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public int CloseDevice() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     *
+     * @param buffer
+     * @param size
+     * @return
+     */
+    @Override
     public int DevicePrint(byte[] buffer, int size) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
