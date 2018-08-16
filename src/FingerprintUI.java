@@ -15,7 +15,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,7 +23,6 @@ import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -87,6 +85,8 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
     private JLabel jLabel3;
     
+    private JLabel companyLabel;
+    
     private JComboBox companyList;
 
     java.awt.Image img;
@@ -115,11 +115,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
     static FingerprintUI fingerprintUI = new FingerprintUI();
     Configs configs = new Configs();
-    DatabaseConnection databaseConnection = new DatabaseConnection();
-    java.sql.Connection connection;
-    java.sql.Statement stmt;
     String selectedBranch;
-    ReadAndWriteToFile fileWrite = new ReadAndWriteToFile();
     ArrayList<String> ipsFromFile = new ArrayList();
     private JComboBox branchesList;
 
@@ -140,7 +136,6 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
         usernameStored = prefs.get(Configs.username, "");
         lastnameStored = prefs.get(Configs.lastname, "");
-        System.out.println(usernameStored + "====" + lastnameStored);
         empCodeStored = prefs.get("empCode", "");
         adminPasswordStored = prefs.get("adminPassword", "");
 
@@ -163,6 +158,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                 }
 
                 addToComboBox(ipNames);
+                
             } else {
                 JOptionPane.showMessageDialog(this, "Error fetching ips");
                 ipLabel.setVisible(true);
@@ -197,7 +193,8 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
             int ipIndex = ipsList.getSelectedIndex();
             System.out.println("ip address " + ipIndex + " " + (String) ipAddresses.get(ipIndex));
             FingerprintUI.prefs.put(Configs.BASE_URL, "http://" + ((String) ipAddresses.get(ipIndex)).replaceAll(" ", "") + ":3000");
-            FingerprintUI.this.getAllBranches();
+            getAllBranches();
+            showCompaniesList();
         });
         
         companyList.addActionListener((ActionEvent e) -> {
@@ -213,29 +210,8 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         }
     }
     
-    private void addCompaniesList(ArrayList<String> companies) {
-        for (int x = 0; x<companies.size(); x++) {
-            companyList.addItem(companies.get(x));
-        }
-    }
-    
     private void showCompaniesList() {
-        ArrayList<String> companiesList = new ArrayList<String>();
-        companiesList.add("company a");
-        companiesList.add("company b");
-        addCompaniesList(companiesList);
-        Object[] options = new Object[]{};
-        JOptionPane jop = new JOptionPane("Select company", 
-                JOptionPane.QUESTION_MESSAGE,
-                JOptionPane.DEFAULT_OPTION,
-                null, options, null);
-        jop.add(companyList);
-
-        //create a JDialog and add JOptionPane to it 
-        JDialog diag = new JDialog();
-        diag.getContentPane().add(jop);
-        diag.pack();
-        diag.setVisible(true);
+        getAllCompanies();
     }
 
     private void WriteToFile(String ipName, String ipAddress) {
@@ -288,6 +264,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                     .field("image_size", size)
                     .field("image_hex", image_hex)
                     .field("emp_branch", emp_branch)
+                    .field("emp_company", companyList.getSelectedItem().toString())
                     .field("emp_phoneNumber", employeePhoneNumber)
                     .field("emp_NSSFNumber", employeeNSSFNumber)
                     .field("isSuperVisor", false).asJson();
@@ -346,6 +323,32 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                 JOptionPane.showMessageDialog(this, "Connection Set");
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to fetch.Contact Admin");
+            }
+        } catch (UnirestException ex) {
+            JOptionPane.showMessageDialog(this, "Failed to connect, check connection");
+            Logger.getLogger(FingerprintUI.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (JSONException e) {
+        }
+    }
+
+    private void getAllCompanies() {
+        try {
+            HttpResponse<JsonNode> postData = Unirest.get(prefs.get(Configs.BASE_URL, "") 
+                    + "/fingerprintCore/fingerprint/getCompanies").asJson();
+
+            if (postData.getBody() != null) {
+                JSONArray content = ((JsonNode) postData.getBody()).getObject().getJSONArray("content");
+                if (content.length() > 0) {
+                    companyList.removeAllItems();
+
+                    for (int x = 0; x < content.length(); x++) {
+                        companyList.addItem(content.getJSONObject(x).getString("name"));
+                    }
+                } else {
+                    companyList.addItem("Kings Bet");
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to fetch companies.");
             }
         } catch (UnirestException ex) {
             JOptionPane.showMessageDialog(this, "Failed to connect, check connection");
@@ -431,7 +434,6 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                         }
                         break;
                     case 6:
-                        System.out.println(fpsmsg + " ===== " + retmsg);
                         if (retmsg == 1) {
                             try {
                                 fpLibrary.INSTANCE.GetFpCharByEnl(refbuf, refsize);
@@ -443,19 +445,11 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                                 employeeCodeString = employeeCode.getText().toString().toUpperCase();
                                 FingerprintUI.prefs.put("empCode", employeeCodeString);
 
-                                System.out.println(firstNameString + " " + employeeCodeString);
-                                System.out.println("content here string " + FingerprintUI.prefs.get(Configs.username, Configs.username));
-                                System.out.println("content here string " + FingerprintUI.prefs.get(Configs.lastname, Configs.lastname));
-                                System.out.println("content here byte " + FingerprintUI.prefs.getByteArray(employeeCodeString, fingerPrintValueByteEmpty));
-                                System.out.println("content here int " + FingerprintUI.prefs.getInt("imageSize", fingerPrintValueByteSizeEmpty));
                                 FingerprintUI.prefs.put(Configs.username, firstNameString);
                                 FingerprintUI.prefs.put(Configs.lastname, lastnameString);
                                 FingerprintUI.prefs.putByteArray(employeeCodeString, refbuf);
                                 FingerprintUI.prefs.putInt("imageSize", refsize[0]);
-                                System.out.println("content here string " + FingerprintUI.prefs.get(Configs.username, ""));
-                                System.out.println("content here byte " + FingerprintUI.prefs.getByteArray(employeeCodeString, fingerPrintValueByteEmpty) + "  " + employeeCodeString);
-                                System.out.println("content here int " + FingerprintUI.prefs.getInt("imageSize", fingerPrintValueByteSizeEmpty));
-
+                               
                                 FingerprintUI.this
                                         .postUserDetailsToServer(employeeCodeString,
                                                 firstNameString,
@@ -465,7 +459,6 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                                                 new String(Hex.encodeHex(matbuf)),
                                                 branchesList.getSelectedItem().toString());
 
-                                System.out.println(branchesList.getSelectedItem().toString());
                             } catch (JSONException ex) {
                                 Logger.getLogger(FingerprintUI.class.getName()).log(Level.SEVERE, null, ex);
                             }
@@ -476,7 +469,6 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                         break;
                     case 7:
                         configs.DrawImage(fingerprintimage, img);
-                        System.out.println("returned image for drawing " + String.valueOf(img));
 
                         break;
                     case 8:
@@ -500,7 +492,6 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
     
     private void showNSSFNumberDialog() {
         employeeNSSFNumber = JOptionPane.showInputDialog(this, "Enter NSSF number", "NSSF number");
-        showCompaniesList();
     }
     
     private void requestForAdminPassword() {
@@ -559,10 +550,8 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
     }
 
     public static void main(String[] args) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                FingerprintUI.fingerprintUI.checkStatus();
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            FingerprintUI.fingerprintUI.checkStatus();
         });
     }
 
@@ -600,6 +589,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         firstname = new JTextField();
         jLabel2 = new JLabel();
         jLabel3 = new JLabel();
+        companyLabel = new JLabel();
         lastname = new JTextField();
         jLabel4 = new JLabel();
         employeeCode = new JTextField();
@@ -643,13 +633,11 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
         jLabel3.setFont(new Font("Tahoma", 0, 14));
         jLabel3.setText("Last name");
+        
+        companyLabel.setFont(new Font("Tahoma", 0, 14));
+        companyLabel.setText("Select company");
 
-        lastname.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                FingerprintUI.this.lastnameActionPerformed(evt);
-            }
-
-        });
+        lastname.addActionListener(FingerprintUI.this::lastnameActionPerformed);
         jLabel4.setFont(new Font("Tahoma", 0, 14));
         jLabel4.setText("EmployeeCode");
 
@@ -658,12 +646,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         jLabel1.setFont(new Font("Tahoma", 0, 14));
         jLabel1.setText("Branch");
 
-        branchesList.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                FingerprintUI.this.branchesListActionPerformed(evt);
-            }
-
-        });
+        branchesList.addActionListener(FingerprintUI.this::branchesListActionPerformed);
         jButton2.setText("New employee Code");
         jButton2.addActionListener((ActionEvent evt) -> {
             FingerprintUI.this.jButton2ActionPerformed(evt);
@@ -677,24 +660,77 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         });
         GroupLayout jPanel2Layout = new GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(jPanel2Layout.createSequentialGroup().addContainerGap().addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(jPanel2Layout.createSequentialGroup().addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addComponent(jLabel3, -2, 77, -2).addComponent(jLabel2, -2, 67, -2)).addGap(32, 32, 32).addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addComponent(lastname).addComponent(firstname))).addGroup(jPanel2Layout.createSequentialGroup().addComponent(jLabel4, -2, 105, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(employeeCode)).addGroup(jPanel2Layout.createSequentialGroup().addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.TRAILING, false).addGroup(GroupLayout.Alignment.LEADING, jPanel2Layout.createSequentialGroup().addComponent(jLabel1, -2, 105, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(branchesList, 0, -1, 32767)).addGroup(GroupLayout.Alignment.LEADING, jPanel2Layout.createSequentialGroup().addComponent(ipLabel, -2, 105, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(serverIPEditText, -2, 217, -2))).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(updateServerIP, -1, 224, 32767)).addGroup(GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup().addGap(0, 0, 32767).addComponent(jButton2))).addContainerGap()));
-        jPanel2Layout.setVerticalGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(jPanel2Layout.createSequentialGroup().addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false).addComponent(jLabel2, -1, -1, 32767).addComponent(firstname, -1, 31, 32767)).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false).addComponent(jLabel3, -1, -1, 32767).addComponent(lastname, -1, 29, 32767)).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false).addComponent(employeeCode, -1, 30, 32767).addComponent(jLabel4, -1, -1, 32767)).addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(jPanel2Layout.createSequentialGroup().addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(jButton2, -2, 36, -2)).addGroup(jPanel2Layout.createSequentialGroup().addGap(42, 42, 42).addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false).addComponent(branchesList, -1, 29, 32767).addComponent(jLabel1, -1, -1, 32767)))).addGap(35, 35, 35).addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.TRAILING, false).addComponent(updateServerIP, -1, -1, 32767).addComponent(serverIPEditText).addComponent(ipLabel, -2, 35, -2))));
+        jPanel2Layout.setHorizontalGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel2Layout.createSequentialGroup().addContainerGap()
+                        .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                                .addComponent(jLabel3, -2, 77, -2)
+                                                .addComponent(jLabel2, -2, 67, -2)
+                                                .addComponent(companyLabel, -2, 87, -2))
+                                        .addGap(32, 32, 32)
+                                        .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                                .addComponent(lastname)
+                                                .addComponent(firstname)
+                                                .addComponent(companyList)))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addComponent(jLabel4, -2, 105, -2)
+                                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(employeeCode))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
+                                                .addGroup(GroupLayout.Alignment.LEADING, jPanel2Layout.createSequentialGroup()
+                                                        .addComponent(jLabel1, -2, 105, -2)
+                                                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                        .addComponent(branchesList, 0, -1, 32767))
+                                                .addGroup(GroupLayout.Alignment.LEADING, jPanel2Layout.createSequentialGroup()
+                                                        .addComponent(ipLabel, -2, 105, -2)
+                                                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                        .addComponent(serverIPEditText, -2, 217, -2)))
+                                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(updateServerIP, -1, 224, 32767))
+                                .addGroup(GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                                        .addGap(0, 0, 32767)
+                                        .addComponent(jButton2)))
+                        .addContainerGap()));
+        jPanel2Layout.setVerticalGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                .addComponent(jLabel2, -1, -1, 32767)
+                                .addComponent(firstname, -1, 31, 32767))
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                .addComponent(jLabel3, -1, -1, 32767)
+                                .addComponent(lastname, -1, 29, 32767))
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                .addComponent(companyLabel, -1, -1, 32767)
+                                .addComponent(companyList, -1, 29, 32767))
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                .addComponent(employeeCode, -1, 30, 32767).addComponent(jLabel4, -1, -1, 32767))
+                        .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jButton2, -2, 36, -2))
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addGap(42, 42, 42)
+                                        .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                                .addComponent(branchesList, -1, 29, 32767)
+                                                .addComponent(jLabel1, -1, -1, 32767))
+                                        .addGap(42,42,42)))
+                        .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
+                                .addComponent(updateServerIP, -1, -1, 32767)
+                                .addComponent(serverIPEditText)
+                                .addComponent(ipLabel, -2, 35, -2))));
         jPanel1.setBorder(BorderFactory.createTitledBorder(null, "Register fingerprint", 0, 0, null, new Color(51, 102, 255)));
 
         fingerprintscane.setText("Register fingerprint");
-        fingerprintscane.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                FingerprintUI.this.fingerprintscaneActionPerformed(evt);
-            }
-
+        fingerprintscane.addActionListener((ActionEvent evt) -> {
+            FingerprintUI.this.fingerprintscaneActionPerformed(evt);
         });
         enableReader.setLabel("LOGIN");
-        enableReader.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                FingerprintUI.this.enableReaderActionPerformed(evt);
-            }
-
-        });
+        enableReader.addActionListener(FingerprintUI.this::enableReaderActionPerformed);
         GroupLayout jPanel1Layout = new GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(jPanel1Layout.createSequentialGroup().addContainerGap().addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addComponent(fingerprintscane, -1, -1, 32767).addComponent(enableReader, -1, -1, 32767)).addContainerGap()));
@@ -718,12 +754,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         jPanel4Layout.setHorizontalGroup(jPanel4Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(jPanel4Layout.createSequentialGroup().addContainerGap().addComponent(status, -1, 230, 32767).addContainerGap()));
         jPanel4Layout.setVerticalGroup(jPanel4Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup().addContainerGap(-1, 32767).addComponent(status, -2, 31, -2).addGap(105, 105, 105)));
         jButton1.setText("Exit");
-        jButton1.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                FingerprintUI.this.jButton1ActionPerformed(evt);
-            }
-
-        });
+        jButton1.addActionListener(FingerprintUI.this::jButton1ActionPerformed);
         welcomeMessage.setFont(new Font("Tahoma", 0, 14));
         welcomeMessage.setHorizontalAlignment(0);
         welcomeMessage.setText("Welcome, Please register for the first time");
@@ -740,11 +771,13 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         layout.setHorizontalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                 .addGroup(layout.createSequentialGroup().addContainerGap()
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                .addComponent(jPanel2, -1, -1, 32767).addComponent(jPanel1, -1, -1, 32767)
+                                .addComponent(jPanel2, -1, -1, 32767)
+                                .addComponent(jPanel1, -1, -1, 32767)
                                 .addComponent(welcomeMessage, -1, -1, 32767)
                                 .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                         .addComponent(jLabel6, -2, 105, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(ipsList, 0, -1, 32767)).addComponent(jSeparator1)
+                                        .addComponent(ipsList, 0, -1, 32767))
+                                .addComponent(jSeparator1)
                                 .addComponent(jLabel5, -1, -1, 32767)
                                 .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                         .addComponent(jPanel3, -1, -1, 32767).addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(layout.createSequentialGroup().addGap(10, 10, 10).addComponent(jPanel4, -2, -1, -2)).addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup().addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(jButton1, -2, 131, -2))))).addContainerGap()));
@@ -764,14 +797,13 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         String username = firstname.getText();
         if (String.valueOf(username).equalsIgnoreCase("")) {
             JOptionPane.showMessageDialog(this, "Please provide username first");
-        } else if (employeeCode.getText().toString().isEmpty()) {
+        } else if (employeeCode.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please generate employee Code");
         } else if (employeePhoneNumber.isEmpty()) {
             showPhoneNumberDialog();
         } else if (employeeNSSFNumber.isEmpty()) {
             showNSSFNumberDialog();
         } else {
-            System.out.println("content....");
             String adminPassword = prefs.get("adminPassword", "");
             if (!prefs.get(Configs.BASE_URL, "").isEmpty()) {
                 System.out.println(adminPassword);
