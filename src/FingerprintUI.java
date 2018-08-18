@@ -1,11 +1,11 @@
 
-
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
@@ -29,12 +30,13 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle;
+import org.apache.commons.codec.DecoderException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.apache.commons.codec.binary.*;
 
 public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
-    
+
     private JLabel jLabel4;
 
     private JLabel jLabel5;
@@ -60,7 +62,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
     private JButton updateServerIP;
 
     private JLabel welcomeMessage;
-    
+
     private JTextField employeeCode;
 
     private JButton enableReader;
@@ -68,7 +70,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
     private JLabel fingerprintimage;
 
     private JButton fingerprintscane;
-    
+
     private JTextField firstname;
 
     private JLabel ipLabel;
@@ -84,9 +86,9 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
     private JLabel jLabel2;
 
     private JLabel jLabel3;
-    
+
     private JLabel companyLabel;
-    
+
     private JComboBox companyList;
 
     java.awt.Image img;
@@ -121,7 +123,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
     private String employeePhoneNumber = "";
     private String employeeNSSFNumber = "";
-    
+
     public FingerprintUI() {
         setUndecorated(true);
         setExtendedState(6);
@@ -158,7 +160,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                 }
 
                 addToComboBox(ipNames);
-                
+
             } else {
                 JOptionPane.showMessageDialog(this, "Error fetching ips");
                 ipLabel.setVisible(true);
@@ -196,10 +198,10 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
             getAllBranches();
             showCompaniesList();
         });
-        
+
         companyList.addActionListener((ActionEvent e) -> {
             int companySelected = companyList.getSelectedIndex();
-            System.out.println("clicked.at "+companySelected);
+            System.out.println("clicked.at " + companySelected);
         });
     }
 
@@ -209,7 +211,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
             ipsList.addItem(ipNames.get(x));
         }
     }
-    
+
     private void showCompaniesList() {
         getAllCompanies();
     }
@@ -255,7 +257,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
             String emp_branch) throws JSONException {
         try {
 
-            HttpResponse<JsonNode> jsonResponse = Unirest.post(prefs.get(Configs.BASE_URL, "") 
+            HttpResponse<JsonNode> jsonResponse = Unirest.post(prefs.get(Configs.BASE_URL, "")
                     + "/fingerprintCore/fingerprint").header("accept", "application/json")
                     .field("first_name", username)
                     .field("last_name", secondName)
@@ -267,6 +269,8 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                     .field("emp_company", companyList.getSelectedItem().toString())
                     .field("emp_phoneNumber", employeePhoneNumber)
                     .field("emp_NSSFNumber", employeeNSSFNumber)
+                    .field("terminationReason", "none")
+                    .field("isEnabled", true)
                     .field("isSuperVisor", false).asJson();
 
             if (((JsonNode) jsonResponse.getBody()).getObject().getBoolean("success")) {
@@ -306,7 +310,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
     private void getAllBranches() {
         try {
-            HttpResponse<JsonNode> postData = Unirest.get(prefs.get(Configs.BASE_URL, "") 
+            HttpResponse<JsonNode> postData = Unirest.get(prefs.get(Configs.BASE_URL, "")
                     + "/fingerprintCore/getBranches/getAllBranches").asJson();
 
             if (postData.getBody() != null) {
@@ -333,7 +337,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
     private void getAllCompanies() {
         try {
-            HttpResponse<JsonNode> postData = Unirest.get(prefs.get(Configs.BASE_URL, "") 
+            HttpResponse<JsonNode> postData = Unirest.get(prefs.get(Configs.BASE_URL, "")
                     + "/fingerprintCore/fingerprint/getCompanies").asJson();
 
             if (postData.getBody() != null) {
@@ -383,52 +387,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                         if (retmsg == 1) {
                             System.out.println("switch case 5====");
                             fpLibrary.INSTANCE.GetFpCharByGen(matbuf, matsize);
-                            try {
-                                HttpResponse<JsonNode> requestForAllFingerprints = Unirest.get(FingerprintUI.prefs.get(Configs.BASE_URL, "") + "/fingerprintCore/fingerprint/").header("Content-Type", "application/json").asJson();
-
-                                if (((JsonNode) requestForAllFingerprints.getBody()).getObject().getBoolean("success")) {
-                                    JSONArray contentFingerprints = ((JsonNode) requestForAllFingerprints.getBody()).getObject().getJSONArray("content");
-
-                                    System.out.println(contentFingerprints.toString());
-
-                                    if (contentFingerprints.length() > 0) {
-                                        for (int count = 0; count < contentFingerprints.length(); count++) {
-                                            try {
-                                                String image_hex = contentFingerprints.getJSONObject(count).getString("image_hex");
-                                                fingerPrintValueByte = Hex.decodeHex(image_hex.toCharArray());
-                                                System.out.println("  updated " + fingerPrintValueByte + " ----" + matbuf);
-
-                                                int ret = fpLibrary.INSTANCE.MatchTemplateOne(matbuf, fingerPrintValueByte, 512);
-                                                System.out.println("Match Val : " + String.valueOf(ret));
-
-                                                if (ret > 50) {
-                                                    JOptionPane.showMessageDialog(FingerprintUI.this, "Fingerprint already exists!");
-                                                    System.out.println("MAtch kinder found");
-                                                    break;
-                                                }
-                                                System.out.println("No match found my friend!");
-                                            } catch (Exception e) {
-                                                e.printStackTrace();
-                                            }
-                                            System.out.println("counter is now at: " + count + " " + contentFingerprints.length());
-                                            if (count == contentFingerprints.length() - 1) {
-                                                status.setText("Registering...");
-                                                System.out.println("Now starting enrollment process");
-
-                                                FingerprintUI.this.beginFingerRegistration();
-                                            }
-
-                                        }
-                                    } else {
-                                        FingerprintUI.this.beginFingerRegistration();
-                                    }
-                                } else {
-                                    System.out.println("failed amn");
-                                }
-                            } catch (UnirestException ex) {
-                                Logger.getLogger(FingerprintUI.class.getName()).log(Level.SEVERE, null, ex);
-                            } catch (JSONException e) {
-                            }
+                            analyseFingerprint();
                         } else {
                             status.setText("Capture Fail");
                         }
@@ -449,7 +408,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                                 FingerprintUI.prefs.put(Configs.lastname, lastnameString);
                                 FingerprintUI.prefs.putByteArray(employeeCodeString, refbuf);
                                 FingerprintUI.prefs.putInt("imageSize", refsize[0]);
-                               
+
                                 FingerprintUI.this
                                         .postUserDetailsToServer(employeeCodeString,
                                                 firstNameString,
@@ -478,6 +437,65 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         }, 0L, 100L);
     }
 
+    private void analyseFingerprint() {
+        try {
+            HttpResponse<JsonNode> requestForAllFingerprints = Unirest.get(FingerprintUI.prefs.get(Configs.BASE_URL, "") + "/fingerprintCore/fingerprint/").header("Content-Type", "application/json").asJson();
+
+            if (((JsonNode) requestForAllFingerprints.getBody()).getObject().getBoolean("success")) {
+                JSONArray contentFingerprints = ((JsonNode) requestForAllFingerprints.getBody()).getObject().getJSONArray("content");
+
+                System.out.println(contentFingerprints.toString());
+
+                if (contentFingerprints.length() > 0) {
+                    Boolean shouldRegister = true;
+                    for (int count = 0; count < contentFingerprints.length(); count++) {
+                        try {
+                            String image_hex = contentFingerprints.getJSONObject(count).getString("image_hex");
+                            fingerPrintValueByte = Hex.decodeHex(image_hex.toCharArray());
+
+                            int ret = fpLibrary.INSTANCE.MatchTemplateOne(matbuf, fingerPrintValueByte, 512);
+                            System.out.println("Match Val : " + String.valueOf(ret));
+
+                            if (ret > 50) {
+                                shouldRegister = false;
+                                String termReason
+                                        = contentFingerprints.getJSONObject(count)
+                                                .getString("terminationReason");
+                                if ("none".equals(termReason)) {
+                                    JOptionPane.
+                                            showMessageDialog(FingerprintUI.this,
+                                                    "Fingerprint already exist");
+                                } else {
+                                    JOptionPane
+                                            .showMessageDialog(FingerprintUI.this,
+                                                     "Terminated: " + termReason);
+                                    status.setText("Terminated: " + termReason);
+
+                                }
+
+                                break;
+                            }
+                        } catch (HeadlessException | DecoderException | JSONException e) {
+                        }
+                    }
+                    if (shouldRegister) {
+                        status.setText("Registering...");
+                        System.out.println("Now starting enrollment process");
+
+                        FingerprintUI.this.beginFingerRegistration();
+                    }
+                } else {
+                    FingerprintUI.this.beginFingerRegistration();
+                }
+            } else {
+                System.out.println("failed amn");
+            }
+        } catch (UnirestException ex) {
+            Logger.getLogger(FingerprintUI.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (JSONException e) {
+        }
+    }
+
     private void beginFingerRegistration() {
         fpLibrary.INSTANCE.EnrolFpChar();
     }
@@ -489,11 +507,11 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
     private void showPhoneNumberDialog() {
         employeePhoneNumber = JOptionPane.showInputDialog(this, "Enter phone number", "Phone number");
     }
-    
+
     private void showNSSFNumberDialog() {
         employeeNSSFNumber = JOptionPane.showInputDialog(this, "Enter NSSF number", "NSSF number");
     }
-    
+
     private void requestForAdminPassword() {
         String adminPassword = JOptionPane.showInputDialog(this, "Enter Admin Password", "Administrator password");
 
@@ -508,7 +526,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
     private void crossCheckPasswordWithServer(String adminPassword) {
         try {
-            HttpResponse<JsonNode> request = Unirest.get(prefs.get(Configs.BASE_URL, "") 
+            HttpResponse<JsonNode> request = Unirest.get(prefs.get(Configs.BASE_URL, "")
                     + "/fingerprintCore/fingerprint/getPasswordSystem").header("Content-Type", "application/json").asJson();
 
             if (((JsonNode) request.getBody()).getObject().getBoolean("success")) {
@@ -561,8 +579,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
             if (((JsonNode) request.getBody()).getObject().getBoolean("success")) {
                 try {
-                    String employeeCodeUser = ((JsonNode) 
-                            request.getBody()).getObject().getJSONObject("content").getString("empCode");
+                    String employeeCodeUser = ((JsonNode) request.getBody()).getObject().getJSONObject("content").getString("empCode");
                     employeeCode.setText(employeeCodeUser);
                     showPhoneNumberDialog();
                     showNSSFNumberDialog();
@@ -633,7 +650,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
         jLabel3.setFont(new Font("Tahoma", 0, 14));
         jLabel3.setText("Last name");
-        
+
         companyLabel.setFont(new Font("Tahoma", 0, 14));
         companyLabel.setText("Select company");
 
@@ -718,7 +735,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                                         .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
                                                 .addComponent(branchesList, -1, 29, 32767)
                                                 .addComponent(jLabel1, -1, -1, 32767))
-                                        .addGap(42,42,42)))
+                                        .addGap(42, 42, 42)))
                         .addGroup(jPanel2Layout.createParallelGroup(GroupLayout.Alignment.TRAILING, false)
                                 .addComponent(updateServerIP, -1, -1, 32767)
                                 .addComponent(serverIPEditText)
