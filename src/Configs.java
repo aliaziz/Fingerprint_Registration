@@ -33,8 +33,6 @@ public class Configs
             rawpic[i] = (m | m << 8 | m << 16 | 0xFF000000);
         }
         img = createImage(new MemoryImageSource(w, h, rawpic, 0, w));
-        System.out.print(img + " after being created");
-        fingerprintpanel.setIcon(new ImageIcon(img));
     }
 
     public static byte[] hexStringToByteArray(String s) {

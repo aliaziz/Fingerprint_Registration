@@ -77,7 +77,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
     private JComboBox ipsList;
 
-    private JButton jButton1;
+    private JButton exitButton;
 
     private JButton jButton2;
 
@@ -623,7 +623,7 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         fingerprintimage = new JLabel();
         jPanel4 = new JPanel();
         status = new JLabel();
-        jButton1 = new JButton();
+        exitButton = new JButton();
         welcomeMessage = new JLabel();
         jLabel6 = new JLabel();
         ipsList = new JComboBox();
@@ -756,10 +756,10 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
 
         fingerprintimage.setBackground(new Color(255, 255, 255));
 
-        GroupLayout jPanel3Layout = new GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addComponent(fingerprintimage, -1, -1, 32767));
-        jPanel3Layout.setVerticalGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addComponent(fingerprintimage, -1, 117, 32767));
+        GroupLayout fingerImageLayout = new GroupLayout(jPanel3);
+        jPanel3.setLayout(fingerImageLayout);
+        fingerImageLayout.setHorizontalGroup(fingerImageLayout.createParallelGroup(GroupLayout.Alignment.LEADING).addComponent(fingerprintimage, -1, -1, 32767));
+        fingerImageLayout.setVerticalGroup(fingerImageLayout.createParallelGroup(GroupLayout.Alignment.LEADING).addComponent(fingerprintimage, -1, 117, 32767));
         jPanel4.setBorder(BorderFactory.createTitledBorder(null, "Status messages", 0, 0, null, new Color(51, 51, 255)));
 
         status.setFont(new Font("Myriad Hebrew", 1, 18));
@@ -770,8 +770,8 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(jPanel4Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(jPanel4Layout.createSequentialGroup().addContainerGap().addComponent(status, -1, 230, 32767).addContainerGap()));
         jPanel4Layout.setVerticalGroup(jPanel4Layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup().addContainerGap(-1, 32767).addComponent(status, -2, 31, -2).addGap(105, 105, 105)));
-        jButton1.setText("Exit");
-        jButton1.addActionListener(FingerprintUI.this::jButton1ActionPerformed);
+        exitButton.setText("Exit");
+        exitButton.addActionListener(FingerprintUI.this::jButton1ActionPerformed);
         welcomeMessage.setFont(new Font("Tahoma", 0, 14));
         welcomeMessage.setHorizontalAlignment(0);
         welcomeMessage.setText("Welcome, Please register for the first time");
@@ -797,8 +797,8 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
                                 .addComponent(jSeparator1)
                                 .addComponent(jLabel5, -1, -1, 32767)
                                 .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                        .addComponent(jPanel3, -1, -1, 32767).addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(layout.createSequentialGroup().addGap(10, 10, 10).addComponent(jPanel4, -2, -1, -2)).addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup().addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(jButton1, -2, 131, -2))))).addContainerGap()));
-        layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(layout.createSequentialGroup().addGap(9, 9, 9).addComponent(welcomeMessage).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(jSeparator1, -2, 10, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(jLabel5, -2, 25, -2).addGap(18, 18, 18).addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(ipsList).addComponent(jLabel6, -1, -1, 32767)).addGap(18, 18, 18).addComponent(jPanel2, -2, -1, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(jPanel1, -2, -1, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING, false).addComponent(jPanel3, -2, -1, -2).addGroup(layout.createSequentialGroup().addComponent(jPanel4, -2, 70, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, -1, 32767).addComponent(jButton1, -2, 42, -2))).addContainerGap()));
+                                        .addComponent(jPanel3, -1, -1, 32767).addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(layout.createSequentialGroup().addGap(10, 10, 10).addComponent(jPanel4, -2, -1, -2)).addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup().addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(exitButton, 0, 131, -2))))).addContainerGap()));
+        layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(layout.createSequentialGroup().addGap(9, 9, 9).addComponent(welcomeMessage).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(jSeparator1, -2, 10, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(jLabel5, -2, 25, -2).addGap(18, 18, 18).addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(ipsList).addComponent(jLabel6, -1, -1, 32767)).addGap(18, 18, 18).addComponent(jPanel2, -2, -1, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addComponent(jPanel1, -2, -1, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED).addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING, false).addComponent(jPanel3, -2, -1, -2).addGroup(layout.createSequentialGroup().addComponent(jPanel4, -2, 70, -2).addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, -1, 32767).addComponent(exitButton, 0, 42, -2))).addContainerGap()));
         pack();
     }
 
