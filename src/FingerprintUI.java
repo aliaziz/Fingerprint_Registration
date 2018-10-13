@@ -99,16 +99,16 @@ public class FingerprintUI extends javax.swing.JFrame implements fpLibrary {
     private static Preferences prefs;
     private byte[] refbuf = new byte[100];
     private int[] refsize = new int[1];
-    private byte[] matbuf = new byte[255];
+    private byte[] matbuf = new byte[1024];
     private int[] matsize = new int[1];
     String usernameStored;
     String lastnameStored;
     String empCodeStored;
     String adminPasswordStored;
-    byte[] fingerPrintValueByte = new byte[100];
+    byte[] fingerPrintValueByte = new byte[1024];
 
     int fingerPrintValueByteSizeEmpty;
-    byte[] fingerPrintValueByteEmpty = new byte[100];
+    byte[] fingerPrintValueByteEmpty = new byte[1024];
     private String fileName = "ConfigFingerPrint.txt";
 
     private ArrayList<String> returnedIps = new ArrayList();
